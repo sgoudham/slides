@@ -100,7 +100,7 @@ func (m *Model) Load() error {
 		slides = slides[1:]
 	}
 
-	//
+	// TODO: Figure out how to turn this from a dynamic slice into an array since I always know the length
 	splitSlides := make([][]string, len(slides))
 	for i, slide := range slides {
 		section := strings.Split(slide, sectionDelimiter)
@@ -188,10 +188,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		default:
 			newState := navigation.Navigate(navigation.State{
-				Buffer:      m.buffer,
-				Page:        m.Page,
-				Section:     m.Section,
-				TotalSlides: len(m.Slides),
+				Buffer:        m.buffer,
+				Page:          m.Page,
+				Section:       m.Section,
+				TotalSlides:   len(m.Slides),
+				TotalSections: len(m.Slides[m.Page]),
 			}, keyPress)
 			m.buffer = newState.Buffer
 			m.SetPage(newState.Page)

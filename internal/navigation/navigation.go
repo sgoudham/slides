@@ -62,28 +62,30 @@ func Navigate(state State, keyPress string) State {
 		}
 	case " ", "j", "right", "l", "enter", "pgdown":
 		return State{
-			Page:        navigateNext(state, state.Page),
+			Page:        navigateNextPage(state),
 			TotalSlides: state.TotalSlides,
 		}
 	case "k", "left", "h", "pgup", "N":
 		return State{
-			Page:        navigatePrevious(state, state.Page),
+			Page:        navigatePreviousPage(state),
 			TotalSlides: state.TotalSlides,
 		}
 	case "up", "p":
 		return State{
-			Page:    state.Page,
-			Section: navigatePrevious(state, state.Section),
+			//Section:       navigatePreviousSection(state),
+			TotalSections: state.TotalSections,
 		}
 	case "down", "n":
 		return State{
-			Page:    state.Page,
-			Section: navigateNext(state, state.Section),
+			//Section:       navigateNextSection(state),
+			TotalSections: state.TotalSections,
 		}
 	default:
 		return State{
-			Page:        state.Page,
-			TotalSlides: state.TotalSlides,
+			Page:          state.Page,
+			Section:       state.Section,
+			TotalSlides:   state.TotalSlides,
+			TotalSections: state.TotalSections,
 		}
 	}
 }
@@ -93,14 +95,14 @@ func bufferIsNumeric(buffer string) bool {
 	return err == nil
 }
 
-func navigateNext(state State, pageOrSection int) int {
+func navigateNextPage(state State) int {
 	return repeatableAction(func(slide, totalSlides int) int {
 		if slide < totalSlides-1 {
 			return slide + 1
 		}
 
 		return totalSlides - 1
-	}, state, pageOrSection)
+	}, state)
 }
 
 func navigateSlide(buffer string, totalSlides int) int {
@@ -118,17 +120,17 @@ func navigateSlide(buffer string, totalSlides int) int {
 	return destinationSlide
 }
 
-func navigatePrevious(state State, pageOrSection int) int {
+func navigatePreviousPage(state State) int {
 	return repeatableAction(func(slide, totalSlides int) int {
 		if slide > 0 {
 			return slide - 1
 		}
 
 		return slide
-	}, state, pageOrSection)
+	}, state)
 }
 
-func repeatableAction(fn repeatableFunc, state State, pageOrSection int) int {
+func repeatableAction(fn repeatableFunc, state State) int {
 	if !bufferIsNumeric(state.Buffer) {
 		return fn(state.Page, state.TotalSlides)
 	}
@@ -138,7 +140,7 @@ func repeatableAction(fn repeatableFunc, state State, pageOrSection int) int {
 
 	if repeat == 0 {
 		// This is how behaviour works in Vim, so following principle of least astonishment.
-		return fn(pageOrSection, state.TotalSlides)
+		return fn(page, state.TotalSlides)
 	}
 
 	for i := 0; i < repeat; i++ {
