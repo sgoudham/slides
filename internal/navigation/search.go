@@ -12,7 +12,7 @@ import (
 type Model interface {
 	CurrentPage() int
 	SetPage(page int)
-	Pages() []string
+	Pages() [][]string
 }
 
 // Search represents the current search
@@ -72,7 +72,7 @@ func (s *Search) Execute(m Model) {
 		return
 	}
 	check := func(i int) bool {
-		content := m.Pages()[i]
+		content := m.Pages()[0][i]
 		if len(pattern.FindAllStringSubmatch(content, 1)) != 0 {
 			m.SetPage(i)
 			return true

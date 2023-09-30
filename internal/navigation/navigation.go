@@ -8,9 +8,11 @@ type repeatableFunc func(slide, totalSlides int) int
 
 // State tracks the current buffer, page, and total number of slides
 type State struct {
-	Buffer      string
-	Page        int
-	TotalSlides int
+	Buffer        string
+	Page          int
+	Section       int
+	TotalSlides   int
+	TotalSections int
 }
 
 // Navigate receives the current State and keyPress, and returns the new State.
@@ -24,22 +26,28 @@ func Navigate(state State, keyPress string) State {
 		}
 
 		return State{
-			Buffer:      newBuffer,
-			Page:        state.Page,
-			TotalSlides: state.TotalSlides,
+			Buffer:        newBuffer,
+			Page:          state.Page,
+			Section:       state.Section,
+			TotalSlides:   state.TotalSlides,
+			TotalSections: state.TotalSections,
 		}
 	case "g":
 		switch state.Buffer {
 		case "g":
 			return State{
-				Page:        0,
-				TotalSlides: state.TotalSlides,
+				Page:          0,
+				Section:       0,
+				TotalSlides:   state.TotalSlides,
+				TotalSections: state.TotalSections,
 			}
 		default:
 			return State{
-				Buffer:      "g",
-				Page:        state.Page,
-				TotalSlides: state.TotalSlides,
+				Buffer:        "g",
+				Page:          state.Page,
+				Section:       state.Section,
+				TotalSlides:   state.TotalSlides,
+				TotalSections: state.TotalSections,
 			}
 		}
 	case "G":
@@ -52,15 +60,25 @@ func Navigate(state State, keyPress string) State {
 			Page:        targetSlide,
 			TotalSlides: state.TotalSlides,
 		}
-	case " ", "down", "j", "right", "l", "enter", "n", "pgdown":
+	case " ", "j", "right", "l", "enter", "pgdown":
 		return State{
-			Page:        navigateNext(state),
+			Page:        navigateNext(state, state.Page),
 			TotalSlides: state.TotalSlides,
 		}
-	case "up", "k", "left", "h", "p", "pgup", "N":
+	case "k", "left", "h", "pgup", "N":
 		return State{
-			Page:        navigatePrevious(state),
+			Page:        navigatePrevious(state, state.Page),
 			TotalSlides: state.TotalSlides,
+		}
+	case "up", "p":
+		return State{
+			Page:    state.Page,
+			Section: navigatePrevious(state, state.Section),
+		}
+	case "down", "n":
+		return State{
+			Page:    state.Page,
+			Section: navigateNext(state, state.Section),
 		}
 	default:
 		return State{
@@ -75,14 +93,14 @@ func bufferIsNumeric(buffer string) bool {
 	return err == nil
 }
 
-func navigateNext(state State) int {
+func navigateNext(state State, pageOrSection int) int {
 	return repeatableAction(func(slide, totalSlides int) int {
 		if slide < totalSlides-1 {
 			return slide + 1
 		}
 
 		return totalSlides - 1
-	}, state)
+	}, state, pageOrSection)
 }
 
 func navigateSlide(buffer string, totalSlides int) int {
@@ -100,17 +118,17 @@ func navigateSlide(buffer string, totalSlides int) int {
 	return destinationSlide
 }
 
-func navigatePrevious(state State) int {
+func navigatePrevious(state State, pageOrSection int) int {
 	return repeatableAction(func(slide, totalSlides int) int {
 		if slide > 0 {
 			return slide - 1
 		}
 
 		return slide
-	}, state)
+	}, state, pageOrSection)
 }
 
-func repeatableAction(fn repeatableFunc, state State) int {
+func repeatableAction(fn repeatableFunc, state State, pageOrSection int) int {
 	if !bufferIsNumeric(state.Buffer) {
 		return fn(state.Page, state.TotalSlides)
 	}
@@ -120,7 +138,7 @@ func repeatableAction(fn repeatableFunc, state State) int {
 
 	if repeat == 0 {
 		// This is how behaviour works in Vim, so following principle of least astonishment.
-		return fn(state.Page, state.TotalSlides)
+		return fn(pageOrSection, state.TotalSlides)
 	}
 
 	for i := 0; i < repeat; i++ {

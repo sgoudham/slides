@@ -1,7 +1,9 @@
 # Welcome to Slides
+
 A terminal based presentation tool
 
 ## Everything is markdown
+
 In fact this entire presentation is a markdown file.
 
 Press `n` to go to the next slide.
@@ -16,9 +18,9 @@ package main
 import "fmt"
 
 func main() {
-  // You can show code in slides
-  // Press ctrl+e to execute this code directly in slides
-  fmt.Println("Tada!")
+	// You can show code in slides
+	// Press ctrl+e to execute this code directly in slides
+	fmt.Println("Tada!")
 }
 ```
 
@@ -27,6 +29,7 @@ func main() {
 # h1
 
 You can use everything in markdown!
+
 * Like bulleted list
 * You know the deal
 
@@ -35,14 +38,29 @@ You can use everything in markdown!
 ## h2
 
 | Tables | Too    |
-| ------ | ------ |
+|--------|--------|
 | Even   | Tables |
 
+# h1
+
+===
+
+## h2
+
+===
 
 ### h3
 
+===
+
 #### h4
+
+===
+
 ##### h5
+
+===
+
 ###### h6
 
 ---
@@ -56,11 +74,13 @@ digraph {
     b -> c;
 }
 ```
+
 ```
 ┌───┐     ┌───┐     ┌───┐
 │ a │ ──▶ │ b │ ──▶ │ c │
 └───┘     └───┘     └───┘
 ```
+
 ---
 
 All you need to do is separate slides with triple dashes
@@ -68,10 +88,12 @@ All you need to do is separate slides with triple dashes
 
 ```markdown
 # Slide 1
+
 Some stuff
 
 --- 
 
 # Slide 2
+
 Some other stuff
 ```

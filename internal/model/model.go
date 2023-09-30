@@ -30,14 +30,16 @@ var (
 )
 
 const (
-	delimiter = "\n---\n"
+	sectionDelimiter = "\n===\n"
+	slideDelimiter   = "\n---\n"
 )
 
 // Model represents the model of this presentation, which contains all the
 // state related to the current slides.
 type Model struct {
-	Slides   []string
+	Slides   [][]string
 	Page     int
+	Section  int
 	Author   string
 	Date     string
 	Theme    glamour.TermRendererOption
@@ -71,7 +73,7 @@ func fileWatchCmd() tea.Cmd {
 	})
 }
 
-// Load loads all of the content and metadata for the presentation.
+// Load loads all the content and metadata for the presentation.
 func (m *Model) Load() error {
 	var content string
 	var err error
@@ -88,17 +90,24 @@ func (m *Model) Load() error {
 
 	content = strings.ReplaceAll(content, "\r", "")
 
-	content = strings.TrimPrefix(content, strings.TrimPrefix(delimiter, "\n"))
-	slides := strings.Split(content, delimiter)
+	content = strings.TrimPrefix(content, strings.TrimPrefix(slideDelimiter, "\n"))
+	slides := strings.Split(content, slideDelimiter)
 
 	metaData, exists := meta.New().Parse(slides[0])
-	// If the user specifies a custom configuration options
+	// If the user specifies splitSlides custom configuration options
 	// skip the first "slide" since this is all configuration
 	if exists && len(slides) > 1 {
 		slides = slides[1:]
 	}
 
-	m.Slides = slides
+	//
+	splitSlides := make([][]string, len(slides))
+	for i, slide := range slides {
+		section := strings.Split(slide, sectionDelimiter)
+		splitSlides[i] = section
+	}
+
+	m.Slides = splitSlides
 	m.Author = metaData.Author
 	m.Date = metaData.Date
 	m.Paging = metaData.Paging
@@ -154,7 +163,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.Search.Execute(&m)
 		case "ctrl+e":
 			// Run code blocks
-			blocks, err := code.Parse(m.Slides[m.Page])
+			blocks, err := code.Parse(m.Slides[m.Page][m.Section])
 			if err != nil {
 				// We couldn't parse the code block on the screen
 				m.VirtualText = "\n" + err.Error()
@@ -167,7 +176,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.VirtualText = strings.Join(outs, "\n")
 		case "y":
-			blocks, err := code.Parse(m.Slides[m.Page])
+			blocks, err := code.Parse(m.Slides[m.Page][m.Section])
 			if err != nil {
 				return m, nil
 			}
@@ -181,10 +190,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			newState := navigation.Navigate(navigation.State{
 				Buffer:      m.buffer,
 				Page:        m.Page,
+				Section:     m.Section,
 				TotalSlides: len(m.Slides),
 			}, keyPress)
 			m.buffer = newState.Buffer
 			m.SetPage(newState.Page)
+			m.SetSection(newState.Section)
 		}
 
 	case fileWatchMsg:
@@ -205,7 +216,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // contains the author, date, and pagination information.
 func (m Model) View() string {
 	r, _ := glamour.NewTermRenderer(m.Theme, glamour.WithWordWrap(m.viewport.Width))
-	slide := m.Slides[m.Page]
+	slide := m.Slides[m.Page][m.Section]
 	slide = code.HideComments(slide)
 	slide, err := r.Render(slide)
 	slide = strings.ReplaceAll(slide, "\t", tabSpaces)
@@ -295,6 +306,18 @@ func readStdin() (string, error) {
 	return b.String(), nil
 }
 
+// CurrentSection returns the current section within the page
+func (m *Model) CurrentSection() int {
+	return m.Section
+}
+
+func (m Model) SetSection(section int) {
+	if m.Section == section {
+		return
+	}
+	m.Section = section
+}
+
 // CurrentPage returns the current page the presentation is on.
 func (m *Model) CurrentPage() int {
 	return m.Page
@@ -311,6 +334,6 @@ func (m *Model) SetPage(page int) {
 }
 
 // Pages returns all the slides in the presentation.
-func (m *Model) Pages() []string {
+func (m *Model) Pages() [][]string {
 	return m.Slides
 }
